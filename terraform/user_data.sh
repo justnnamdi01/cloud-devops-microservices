@@ -23,10 +23,6 @@ systemctl enable docker
 # Wait for Docker to be ready
 sleep 5
 
-# Install Docker Compose plugin
-curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-Linux-x86_64" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
 # Install AWS CLI (comes pre-installed on AL2023, but ensure it's there)
 yum install -y aws-cli
 
@@ -55,6 +51,12 @@ DB_PORT=${db_port}
 DATABASE_URL=postgresql+psycopg2://${db_username}:${db_password}@${db_host}:${db_port}/${db_name}
 ENVEOF
 
+# Secure the .env file (credentials should not be world-readable)
+chown root:root /opt/api/.env
+chmod 600 /opt/api/.env
+
+echo ".env file created and secured (600 permissions)"
+
 # Create a systemd service to manage the Docker container
 cat > /etc/systemd/system/api.service << 'SVCEOF'
 [Unit]
@@ -67,12 +69,27 @@ Type=simple
 User=root
 WorkingDirectory=/opt/api
 EnvironmentFile=/opt/api/.env
-ExecStart=/usr/bin/docker run --rm \
+
+# Remove any existing container before starting
+ExecStartPre=/usr/bin/docker rm -f cloud-devops-api || true
+
+# Pull the latest image before starting (ensures fresh deployment)
+ExecStartPre=/usr/bin/docker pull ${aws_account_id}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:latest
+
+# Run the container (note: no --rm so we can inspect logs after exit)
+ExecStart=/usr/bin/docker run \
   --name cloud-devops-api \
   -p 8000:8000 \
   --env-file /opt/api/.env \
+  --log-driver json-file \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
   ${aws_account_id}.dkr.ecr.${aws_region}.amazonaws.com/${ecr_repository}:latest
+
+# Stop the container gracefully
 ExecStop=/usr/bin/docker stop cloud-devops-api
+
+# Restart policy: always restart on failure or system reboot
 Restart=always
 RestartSec=10
 
@@ -89,9 +106,9 @@ echo "API service started successfully"
 echo "Waiting for API to be ready..."
 sleep 10
 
-# Check if API is responding
+# Check if API is responding using Python urllib (no curl dependency)
 for i in {1..30}; do
-  if curl -f http://localhost:8000/health 2>/dev/null; then
+  if python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)" 2>/dev/null; then
     echo "API is ready!"
     break
   else
