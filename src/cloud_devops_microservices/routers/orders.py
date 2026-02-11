@@ -27,7 +27,9 @@ def read_order(order_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{order_id}", response_model=schemas.OrderRead)
-def update_order(order_id: int, update_in: schemas.OrderUpdate, db: Session = Depends(get_db)):
+def update_order(
+    order_id: int, update_in: schemas.OrderUpdate, db: Session = Depends(get_db)
+):
     obj = crud.get_order(db, order_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Order not found")

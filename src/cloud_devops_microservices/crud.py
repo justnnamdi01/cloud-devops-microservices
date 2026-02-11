@@ -21,7 +21,9 @@ def create_order(db: Session, order_in: schemas.OrderCreate) -> models.Order:
     return db_obj
 
 
-def update_order(db: Session, order_obj: models.Order, update_in: schemas.OrderUpdate) -> models.Order:
+def update_order(
+    db: Session, order_obj: models.Order, update_in: schemas.OrderUpdate
+) -> models.Order:
     if update_in.item_name is not None:
         order_obj.item_name = update_in.item_name
     if update_in.quantity is not None:
