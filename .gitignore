@@ -1,0 +1,27 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual envs
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Pytest
+.pytest_cache/
+
+# VSCode
+.vscode/
+
+# Distribution/build
+dist/
+build/
+*.egg-info/
+
+# Local env
+.env
+.DS_Store
