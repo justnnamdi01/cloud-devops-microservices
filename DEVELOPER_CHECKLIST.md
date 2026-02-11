@@ -49,7 +49,15 @@ git add .
 git commit -m "Initial scaffold"
 ```
 
-8. (If you changed numbering) Adjust numbering for subsequent steps as needed.
+8. Run the FastAPI app locally (development):
+
+```powershell
+# activate venv first
+.\.venv\Scripts\Activate.ps1
+uvicorn cloud_devops_microservices.app:app --reload
+```
+
+9. (If you changed numbering) Adjust numbering for subsequent steps as needed.
 
 6. Optional: initialize git and make initial commit
 
